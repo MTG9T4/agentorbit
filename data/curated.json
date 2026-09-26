@@ -1,0 +1,11 @@
+{
+  "include": [
+    { "name": "World AI Fund", "symbol": "WAIF", "mint": "" },
+    { "name": "AI Rig Complex", "symbol": "arc", "mint": "" },
+    { "name": "Federal AI Reserve", "symbol": "FAIR", "mint": "" },
+    { "name": "Alchemist AI", "symbol": "ALCH", "mint": "" },
+    { "name": "Z/Agent", "symbol": "Z/Agent", "mint": "" }
+  ],
+  "deny": [],
+  "note": "include: always-include even when keywords miss (name/symbol match is enough). deny: never include even when keywords match. Mint strings optional - fill from the curation workflow when verified. Edited only by the orbit-curation workflow after its checkpoint."
+}

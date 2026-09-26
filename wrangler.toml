@@ -1,0 +1,12 @@
+# AgentOrbit on Cloudflare Pages — fill in before deploy.
+name = "agentorbit"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "."
+
+[[r2_buckets]]
+binding = "ORBIT_R2"
+# Dev default so `wrangler pages dev` runs out of the box (emulated R2).
+# Before deploy, create the real bucket: `npx wrangler r2 bucket create agentorbit-data`
+bucket_name = "agentorbit-data"
+
+# No vars needed: no secrets, no bot check, no dev bypass in v1.

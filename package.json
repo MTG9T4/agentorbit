@@ -1,0 +1,17 @@
+{
+  "name": "agentorbit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AgentOrbit — the live galaxy of AI-agent coins on pump.fun.",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
+    "typecheck:functions": "tsc --noEmit -p functions",
+    "snapshot": "node scripts/snapshot.js",
+    "serve": "python3 -m http.server 4288"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
