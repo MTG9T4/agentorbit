@@ -42,6 +42,16 @@ interface Ripple {
   start: number;
 }
 
+/** A rare shooting star crossing the field — pure ambience, no interaction. */
+interface Streak {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  start: number;
+  dur: number;
+}
+
 function hashFloat(mint: string): { angle: number; hue: number; speed: number } {
   let h = 0x811c9dc5;
   for (let i = 0; i < mint.length; i++) {
@@ -96,6 +106,8 @@ export class Galaxy {
   private visible: Set<string> | null = null;
   private stars: Star[] = [];
   private ripples: Ripple[] = [];
+  private streaks: Streak[] = [];
+  private nextStreak = 7; // first streak ~7 s after boot
   private lastInteraction = 0;
   private cineT = 0; // 0..1 cinematic blend
   private resizeObserver: ResizeObserver | null = null;
@@ -399,6 +411,24 @@ export class Galaxy {
       if (orb.dead && orb.alpha < 0.02) this.orbs.delete(mint);
     }
     this.ripples = this.ripples.filter((r) => this.time - r.start < 0.7);
+
+    // Ambient shooting stars: one every 9–18 s, ~1.2 s crossing.
+    if (this.time > this.nextStreak) {
+      this.nextStreak = this.time + 9 + Math.random() * 9;
+      const fromLeft = Math.random() < 0.5;
+      const x0 = fromLeft ? -30 : this.width + 30;
+      const dir = fromLeft ? 1 : -1;
+      const y0 = Math.random() * this.height * 0.55;
+      this.streaks.push({
+        x0,
+        y0,
+        x1: x0 + dir * (this.width * 0.45 + Math.random() * this.width * 0.35),
+        y1: y0 + 40 + Math.random() * 110,
+        start: this.time,
+        dur: 1.2,
+      });
+    }
+    this.streaks = this.streaks.filter((s) => this.time - s.start < s.dur);
   }
 
   private draw(): void {
@@ -435,7 +465,32 @@ export class Galaxy {
       ctx.fillRect(star.x, star.y, 1, 1);
     }
 
-    // Orbit rings + a soft core glow.
+    // Shooting stars — a bright head with a fading acid tail.
+    for (const s of this.streaks) {
+      const t = (this.time - s.start) / s.dur;
+      const head = easeOut(t);
+      const tail = Math.max(0, head - 0.28);
+      const px = (u: number): number => s.x0 + (s.x1 - s.x0) * u;
+      const py = (u: number): number => s.y0 + (s.y1 - s.y0) * u;
+      const alpha = t < 0.15 ? t / 0.15 : Math.max(0, 1 - (t - 0.15) / 0.85);
+      const grad = ctx.createLinearGradient(px(tail), py(tail), px(head), py(head));
+      grad.addColorStop(0, 'rgba(200, 255, 61, 0)');
+      grad.addColorStop(1, `rgba(235, 255, 210, ${(0.75 * alpha).toFixed(3)})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(px(tail), py(tail));
+      ctx.lineTo(px(head), py(head));
+      ctx.stroke();
+      if (alpha > 0.05) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(px(head), py(head), 1.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Orbit rings + a soft core glow that breathes slowly.
     ctx.strokeStyle = 'rgba(38, 49, 61, 0.55)';
     ctx.lineWidth = 1;
     for (const r of [0.24, 0.4, 0.6, 0.8, 0.94]) {
@@ -443,12 +498,14 @@ export class Galaxy {
       ctx.arc(cx, cy, R * r, 0, Math.PI * 2);
       ctx.stroke();
     }
-    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.35);
-    core.addColorStop(0, 'rgba(200, 255, 61, 0.10)');
+    const coreBreathe = Math.sin(this.time * 0.7);
+    const coreR = R * 0.35 * (1 + 0.06 * coreBreathe);
+    const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+    core.addColorStop(0, `rgba(200, 255, 61, ${(0.09 + 0.035 * coreBreathe).toFixed(3)})`);
     core.addColorStop(1, 'rgba(200, 255, 61, 0)');
     ctx.fillStyle = core;
     ctx.beginPath();
-    ctx.arc(cx, cy, R * 0.35, 0, Math.PI * 2);
+    ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
     ctx.fill();
 
     // Selection ripples.
@@ -580,13 +637,21 @@ export class Galaxy {
         ctx.lineDashOffset = 0;
       }
 
-      // Ticker labels for the twelve biggest, non-dimmed orbs — in their own hue.
+      // Ticker labels for the twelve biggest, non-dimmed orbs — on a dark
+      // pill so they stay readable over bright orbs, in their own hue.
       if (visibleNow && labeled < 12 && size > 22) {
         labeled++;
-        ctx.fillStyle = `hsla(${hue}, ${Math.max(35, sat)}%, 74%, ${0.9 * a})`;
+        const text = orb.coin.symbol.slice(0, 8).toUpperCase();
         ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+        const tw = ctx.measureText(text).width;
+        const lx = ox - tw / 2 - 6;
+        const ly = oy + size / 2 + 7;
+        ctx.fillStyle = 'rgba(8, 12, 17, 0.72)';
+        fillRoundRect(ctx, lx, ly, tw + 12, 16, 8);
+        ctx.fill();
+        ctx.fillStyle = `hsla(${hue}, ${Math.max(35, sat)}%, 74%, ${0.95 * a})`;
         ctx.textAlign = 'center';
-        ctx.fillText(orb.coin.symbol.slice(0, 8).toUpperCase(), ox, oy + size / 2 + 18);
+        ctx.fillText(text, ox, ly + 12);
       }
 
       if (visibleNow && this.visible) constellation.push({ orb, a });
@@ -623,4 +688,22 @@ export class Galaxy {
 
 function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3);
+}
+
+/** Trace a rounded-rect path (caller fills/strokes it). */
+function fillRoundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }

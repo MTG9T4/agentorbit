@@ -11,7 +11,7 @@
   <meta name="twitter:card" content="summary">
   <title>AgentOrbit — the AI-agent coin galaxy</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=orbit-14">
+  <link rel="stylesheet" href="styles.css?v=orbit-15">
 </head>
 <body>
   <header class="site-header">
@@ -39,6 +39,7 @@
       <div class="search-wrap">
         <input id="search" type="search" placeholder="Search agents…" autocomplete="off" aria-label="Search agent coins">
         <span id="search-count"></span>
+        <div id="search-results" class="search-results" hidden></div>
       </div>
       <span id="chip" class="chip">loading…</span>
       <div id="hover-card" class="hover-card" hidden>
@@ -56,6 +57,7 @@
   <div id="panel-backdrop" hidden></div>
   <aside id="panel" class="panel" aria-label="Coin details">
     <button id="panel-close" type="button" aria-label="Close details">✕ Close</button>
+    <div id="panel-art" class="panel-art" aria-hidden="true"></div>
     <h2 id="panel-name"></h2>
     <p class="panel-ticker" id="panel-ticker"></p>
     <p class="panel-mint" id="panel-mint"></p>
@@ -66,6 +68,7 @@
       <a id="panel-pump" class="btn" href="#" target="_blank" rel="noopener noreferrer">View on Pump ↗</a>
       <a id="panel-dex" class="btn ghost" href="#" target="_blank" rel="noopener noreferrer">View on DEX Screener ↗</a>
       <a id="panel-share" class="btn ghost" href="#" target="_blank" rel="noopener noreferrer">Shareable coin page ↗</a>
+      <button id="panel-copy" type="button" class="btn ghost">Copy share link ⧉</button>
       <button id="panel-card" type="button" class="btn ghost">Download coin card ↓</button>
     </div>
   </aside>
@@ -76,6 +79,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="dist/main.js?v=orbit-14"></script>
+  <script type="module" src="dist/main.js?v=orbit-15"></script>
 </body>
 </html>

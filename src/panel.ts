@@ -7,6 +7,28 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string): T => {
 };
 
 let openMint: string | null = null;
+let lastFocus: HTMLElement | null = null;
+
+/** Coin hero art with an acid lettermark fallback (dead CDN or no image). */
+function renderArt(coin: OrbitCoin): void {
+  const art = $('panel-art');
+  art.replaceChildren();
+  const letter = (): void => {
+    const span = document.createElement('span');
+    span.className = 'letter';
+    span.textContent = (coin.name[0] ?? '?').toUpperCase();
+    art.replaceChildren(span);
+  };
+  if (!coin.image) {
+    letter();
+    return;
+  }
+  const img = document.createElement('img');
+  img.alt = '';
+  img.addEventListener('error', letter, { once: true });
+  img.src = coin.image;
+  art.append(img);
+}
 
 /** Draw a tiny market-cap sparkline; placeholders when history is still forming. */
 export function drawSpark(canvas: HTMLCanvasElement, history: number[] | undefined, falling: boolean): void {
@@ -59,6 +81,7 @@ function renderPanelData(coin: OrbitCoin): void {
   drawSpark($('panel-spark') as HTMLCanvasElement, coin.history, falling);
   $('panel-rows').replaceChildren(
     row('Market cap', formatMc(coin.mc)),
+    row('All-time high', formatMc(coin.ath)),
     row('From all-time high', `${Math.round(momentum(coin) * 100)}%`),
     row(
       'Last refresh Δ',
@@ -71,7 +94,12 @@ function renderPanelData(coin: OrbitCoin): void {
 }
 
 export function openPanel(coin: OrbitCoin): void {
+  if (openMint === null) {
+    // First open only — switching coins mid-panel must not capture the panel's own controls.
+    lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }
   openMint = coin.mint;
+  renderArt(coin);
   $('panel-mint').textContent = coin.mint;
   $('panel-name').textContent = coin.name || 'Unnamed coin';
   $('panel-ticker').textContent = `$${coin.symbol || '?'}`;
@@ -91,10 +119,15 @@ export function openPanel(coin: OrbitCoin): void {
 }
 
 export function closePanel(): void {
+  if (openMint === null) return;
   openMint = null;
   $('panel').classList.remove('open');
   $('panel-backdrop').hidden = true;
   document.body.classList.remove('panel-open');
+  // Hand focus back where it came from (close button, grid card, …).
+  const target = lastFocus;
+  lastFocus = null;
+  if (target && target.isConnected) target.focus({ preventScroll: true });
 }
 
 /**
