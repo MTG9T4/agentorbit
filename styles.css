@@ -215,21 +215,6 @@ button, a, input { touch-action: manipulation; }
 }
 .lens button.active { background: var(--acid); color: #0b1411; }
 
-/* Mobile: the four lens buttons become a full-width row; search moves under them. */
-@media (max-width: 599px) {
-  .lens {
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    width: calc(100% - 16px);
-  }
-  .lens button { flex: 1 1 auto; padding: 9px 6px; min-height: 42px; font-size: 12px; }
-  .search-wrap { top: 66px; right: 8px; left: 8px; justify-content: flex-end; }
-  #search { width: 60%; }
-  .chip { bottom: 8px; left: 8px; font-size: 10px; }
-  .hover-card { display: none; }
-}
-
 .search-wrap {
   position: absolute;
   top: 12px;
@@ -238,7 +223,11 @@ button, a, input { touch-action: manipulation; }
   align-items: center;
   gap: 8px;
   z-index: 5;
+  /* The flex container must never eat taps meant for the galaxy or the lens
+     row — only the actual controls inside it are interactive. */
+  pointer-events: none;
 }
+#search, #search-count, #search-results, #search-results * { pointer-events: auto; }
 #search {
   width: min(240px, 44vw);
   background: rgba(10, 14, 20, 0.85);
@@ -497,4 +486,24 @@ button, a, input { touch-action: manipulation; }
   .hover-card:not([hidden]) { animation: none; }
   .grid-card { transition: none; }
   .grid-card:hover, .grid-card:focus-visible { transform: none; }
+}
+
+/* Mobile: the four lens buttons become a full-width row; search moves below
+   them. This block MUST stay at the end of the file — the base rules for
+   .search-wrap/#search/.chip sit above it with equal specificity, so an
+   earlier position would let them override these (the original bug: the
+   search box sat on the lens row and ate every tap). */
+@media (max-width: 599px) {
+  .lens {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+  }
+  .lens button { flex: 1 1 auto; padding: 9px 6px; min-height: 42px; font-size: 12px; }
+  /* Lens row bottom ≈ 64 px; 72 px leaves a clear tap gutter. */
+  .search-wrap { top: 72px; right: 8px; left: 8px; justify-content: flex-end; }
+  #search { width: 60%; }
+  .chip { bottom: 8px; left: 8px; font-size: 10px; }
+  .hover-card { display: none; }
 }
